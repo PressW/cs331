@@ -1,0 +1,164 @@
+%% written_1.tex
+%% V1.0
+%% 2017/4/08
+%% by Preston Wipf
+%%*************************************************************************
+
+\documentclass[journal]{IEEEtran}
+
+\usepackage[letterpaper,left=0.75in,right=0.75in,%
+  top=1.5in,bottom=0.75in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{hyperref}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolor}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{single}{
+  backgroundcolor=\color{backcolor},
+  breaklines=false,
+  numbers=none,
+  keepspaces=false
+}
+
+\lstdefinestyle{mystyle}{
+  backgroundcolor=\color{backcolor},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{magenta},
+  numberstyle=\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\footnotesize,
+  breakatwhitespace=false,
+  breaklines=true,
+  captionpos=b,
+  keepspaces=true,
+  numbers=left,
+  numbersep=5pt,
+  showspaces=true,
+  tabsize=2
+}
+
+\hyphenation{op-tical net-works semi-conduc-tor}
+\lstset{style=mystyle}
+
+\begin{document}
+\onecolumn
+
+\title{Written Assignment 1}
+\author{Preston~Wipf}%
+
+\markboth{Introduction to Artificial Intelligence, No.~1, April~2017}%
+{Shell \MakeLowercase{\textit{et al.}}: Written Assignment 1}
+
+\maketitle
+
+\section{Smart Home Assistant Analysis}
+
+\subsection{PEAS Description}
+
+\begin{itemize}
+\item \textbf{Performance} - speed of response, accuracy of response, personalized responses
+\item \textbf{Environment} - home owners (users), room, potential noise, internet, databases
+\item \textbf{Actuators} - speakers, LED lighting
+\item \textbf{Sensors} - microphone, ethernet, potential integrations/extensions (Nest thermostat)
+\end{itemize}
+
+\subsection{Environment Description}
+
+\begin{itemize}
+\item \textbf{Partially Observable:} Not only are the sensors only 
+activated by keywords (``Alexa'' or ``Okay, Google''), but the 
+sensors are subject to noise contamination in loud environments.
+\item \textbf{Multi-agent:} I lean towards multi-agent because the 
+person using the home assistant can be thought of as a cooperating 
+agent who can structure their language (query) to maximize the speed 
+and accuracy of the returned result.
+\item \textbf{Stochastic:} Two contributing factors: uncertainty of 
+an answer, perhaps like a subjective question - ``Who is the most 
+exciting athlete of all time?'' as well as the uncertainty of the 
+question; for example, what if a dog barks at the time a question 
+is being asked. Should that be considered part of the query?
+\item \textbf{Sequential:} You could argue each question is isolated 
+from the next, but in this case I purport that each question cumulatively 
+contributes to a profile of the individual in order to return responses 
+best suited to the individual.
+\item \textbf{Static:} Based on my understanding of these systems, 
+once a request has been received, the device no longer accepts input 
+until it has returned a result. 
+\item \textbf{Discrete:} I go back and forth on this, but ultimately 
+because the environment is static with respect to the actual task of 
+mapping the query to a response. Meaning once the query is received, 
+there is nothing changing the query or results with respect the time 
+delta from the reception of the keyword to end of the response.
+\end{itemize}
+
+\subsection{Agent Suggestion}
+
+\noindent \textbf{Utility-based agent:} It is not as simple as was the 
+response correct, but how timely was it and to what degree does it fit 
+the user who requested it.
+
+
+\section{True/False}
+
+\noindent \textit{f: Suppose an agent selects its action uniformly at 
+random from the set of possible actions. There exists a deterministic 
+task environment in which this agent is rational.} \\
+
+\noindent \textbf{True:} Because the task environment includes the 
+performance metric, it can be manipulated such that random action is indeed rational. \\
+
+\noindent \textit{g; It is possible for a given agent to be perfectly 
+rational in two distinct task environments.} \\
+
+\noindent \textbf{True:} Assuming by distinct the prompt means at 
+least one distinguishing feature between the two environments, then 
+predicting the sum of the outcome of a dice roll where in one environment 
+the die are weighted to come up 3 4 and the other environment has the 
+die weighted 5 2. \\
+
+\noindent \textit{h: Every agent is rational in an unobservable environment.} \\
+
+\noindent \textbf{False:} If the environment is unobservable, the 
+agent is only rational if the built-in knowledge base is rational in 
+the environment. \\
+
+\noindent \textit{i: A perfectly rational poker-playing agent never loses.} \\
+
+\noindent \textbf{False:} The agent can make the best possible move based 
+on the combination of cards it receives, but the cards are distributed at 
+random and thus the best (perfectly rational) move can still result in a loss. \\
+
+
+\section{Modified Vacuum Environment}
+
+\noindent \textit{a: Can a simple reflex agent be perfectly rational for 
+this environment?} \\
+
+\noindent \textbf{No.} Because the simple reflex agent is only aware of 
+the current precept, it has no knowledge of squares it has already visited 
+and thus will revisit clean squares. \\
+
+\noindent \textit{b: Can a simple reflex agent with a randomized agent 
+function outperform a simple reflex agent with a deterministic agent 
+function? Explain why or why not.} \\
+
+\noindent \textbf{Yes.} Without the ability to perceive the environment 
+/ boundaries, a deterministic agent function can enter an infinite loop 
+against an obstacle whereas probability tells us the random agent will 
+eventually break out from an obstacle. \\
+
+\noindent \textit{c: Can a reflex agent with state outperform a simple 
+reflex agent? Explain why or why not.} \\
+
+\noindent \textbf{Yes.} Because it now has state, it can not only remember 
+the locations it has visited, but also map the environment such that it can 
+move between any two points in the most efficient manner (somewhat irrelevant 
+in this single dimensional case of left and right). \\
+
+\end{document}
+
+
