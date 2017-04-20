@@ -222,7 +222,7 @@ def print_queue(q, q_name, output_file=False):
 
 
 
-def calculate_cost(explored, start_file, goal_file, output_file):
+def calculate_solution(explored, start_file, goal_file):
     goal = set_state(goal_file)
     start = set_state(start_file)
     solution = queue.LifoQueue()
@@ -237,47 +237,30 @@ def calculate_cost(explored, start_file, goal_file, output_file):
         key = state_to_string(par_state)
         sol_depth += 1
     solution.put(start_state)
-    print_queue(solution, "Solution path", output_file)
+    return solution, sol_depth
+
 
 
 
 
 if __name__ == "__main__":
-    # if len(sys.argv) != 5:
-    #     print("\nUSAGE ERROR")
-    #     print("program_1.py <start_state_file> <goal_state_file> <search_mode> <output_file>\n")
-    # start = sys.argv[1]
-    # goal = sys.argv[2]
-    # mode = sys.argv[3]
-    # out_file = sys.argv[4]
-    # if mode == "bfs":
-    #     explored = bfs(start_state, goal)
-    # elif mode == "dfs":
-    #     explored = dfs(start_state, goal)
-    # elif mode == "iddfs":
-    #     explored = iddfs(start_state, goal)
-    # elif mode == "astar":
-    #     explored = astar(start_state, goal)
-    # else:
-    #     print("\nMODE ERROR: Unsupported mode {0}".format(mode))
-    #     sys.exit(0)
-
-
-    start_state = set_state("test_start1.txt")
-    goal_state = set_state("test_goal1.txt")
-    # fringe = queue.PriorityQueue()
-    # fringe.put((12, start_state))
-    # fringe.put((3, goal_state))
-    # # while not fringe.empty():
-    # #     item = fringe.get()
-    # #     print("\n", item[1])
-    # for item in fringe.queue:
-    #     print(item[1])
-    # # print_queue(fringe, "Fringe", "test.test")
-    # while not fringe.empty():
-    #     item = fringe.get()[1]
-    #     print("\n", item)
-    # for item in fringe.queue:
-    #     print(item)
-    # explored = bfs(start_state, "test_goal1.txt")
-    # print_dict(explored, "test_start1.txt", "test_goal1.txt", "test.test")
+    if len(sys.argv) != 5:
+        print("\nUSAGE ERROR")
+        print("program_1.py <start_state_file> <goal_state_file> <search_mode> <output_file>\n")
+    start = sys.argv[1]
+    goal = sys.argv[2]
+    mode = sys.argv[3]
+    out_file = sys.argv[4]
+    if mode == "bfs":
+        explored, space_cost = bfs(start_state, goal)
+    elif mode == "dfs":
+        explored, space_cost = dfs(start_state, goal)
+    elif mode == "iddfs":
+        explored, space_cost = iddfs(start_state, goal)
+    elif mode == "astar":
+        explored, space_cost = astar(start_state, goal)
+    else:
+        print("\nMODE ERROR: Unsupported mode {0}".format(mode))
+        sys.exit(0)
+    solution_path, sol_depth = calculate_solution(explored, start, goal)
+    print_queue(solution_path, "Solution path", out_file)
