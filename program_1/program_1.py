@@ -1,10 +1,6 @@
 import pandas as pd
 import numpy as np
-import queue
-
-
-
-q = queue.Queue()
+import queue, sys
 
 
 
@@ -16,7 +12,12 @@ def set_state(filename):
 
 
 
-def find_successors(state, fringe, explored):
+def find_successors(passed_state, fringe, explored):
+    if "parent" in passed_state:
+        state = passed_state.drop("parent", 1)
+    else:
+        state = passed_state
+
     # 1 missionary in the boat
     m1 = {"missionaries":  {"left": 1, "right": -1},
           "cannibals":     {"left": 0, "right": 0},
@@ -26,6 +27,7 @@ def find_successors(state, fringe, explored):
     else:
         m1_state = state.add(pd.DataFrame(m1))
     if (valid_state(m1_state)) and (state_to_string(m1_state) not in explored):
+        m1_state["parent"] = state_to_string(state)
         fringe.put(m1_state)
 
     # 2 missionaries in the boat
@@ -37,6 +39,7 @@ def find_successors(state, fringe, explored):
     else:
         m2_state = state.add(pd.DataFrame(m2))
     if (valid_state(m2_state)) and (state_to_string(m2_state) not in explored):
+        m2_state["parent"] = state_to_string(state)
         fringe.put(m2_state)
 
     # 1 cannibal in the boat
@@ -48,6 +51,7 @@ def find_successors(state, fringe, explored):
     else:
         c1_state = state.add(pd.DataFrame(c1))
     if (valid_state(c1_state)) and (state_to_string(c1_state) not in explored):
+        c1_state["parent"] = state_to_string(state)
         fringe.put(c1_state)
 
     # 1 cannibal, 1 missionary in the boat
@@ -59,6 +63,7 @@ def find_successors(state, fringe, explored):
     else:
         m1c1_state = state.add(pd.DataFrame(m1c1))
     if (valid_state(m1c1_state)) and (state_to_string(m1c1_state) not in explored):
+        m1c1_state["parent"] = state_to_string(state)
         fringe.put(m1c1_state)
 
     # 2 cannibals in the boat
@@ -70,6 +75,7 @@ def find_successors(state, fringe, explored):
     else:
         c2_state = state.add(pd.DataFrame(c2))
     if (valid_state(c2_state)) and (state_to_string(c2_state) not in explored):
+        c2_state["parent"] = state_to_string(state)
         fringe.put(c2_state)
 
 
@@ -87,6 +93,7 @@ def valid_state(state):
         if state.get_value("left", "missionaries") < state.get_value("left", "cannibals"):
             valid = False
     return valid
+
 
 
 def is_goal_state(state, goal_file):
@@ -107,9 +114,33 @@ def state_to_string(state):
 
 
 
+def hueristic(state, goal_file):
+    goal_state = set_state(goal_file)
+    # Positive number indicate a movement from right bank to left bank, negative from left to right
+    m = state.get_value("right", "missionaries") - goal_state.get_value("right", "missionaries")
+    c = state.get_value("right", "cannibals")    - goal_state.get_value("right", "cannibals")
+    return m + c
+
+
+
 def bfs(start, goal_file):
     print("\nSTART STATE\n", start, "\n")
     fringe = queue.Queue()
+    fringe.put(start)
+    explored = {}
+    explored[state_to_string(start)] = start
+    while not fringe.empty():
+        cur_state = fringe.get()
+        print(hueristic(cur_state, "test_goal1.txt"))
+        find_successors(cur_state, fringe, explored)
+        explored[state_to_string(cur_state)] = cur_state
+        if is_goal_state(cur_state, goal_file): return explored
+
+
+
+def dfs(start, goal_file):
+    print("\nSTART STATE\n", start, "\n")
+    fringe = queue.LifoQueue()
     fringe.put(start)
     explored = {}
     explored[state_to_string(start)] = start
@@ -121,26 +152,106 @@ def bfs(start, goal_file):
 
 
 
-def print_queue(q, q_name):
+def iddfs(start, goal_file):
+    print("\nSTART STATE\n", start, "\n")
+    max_depth = 1
+    while True:
+        fringe = queue.LifoQueue()
+        fringe.put(start)
+        explored = {}
+        explored[state_to_string(start)] = start
+        while not fringe.empty():
+            cur_state = fringe.get()
+            if depth == max_depth: break
+            find_successors(cur_state, fringe, explored)
+            explored[state_to_string(cur_state)] = cur_state
+            if is_goal_state(cur_state, goal_file): return explored
+        max_depth += 1
+
+
+
+def astar(start, goal_file):
+    print("\nSTART STATE\n", start, "\n")
+    fringe = queue.PriorityQueue()
+    explored = {}
+    cost_so_far = {}
+    fringe.put((0, start))
+    cost_so_far[state_to_string(start)] = 0
+
+    while not fringe.empty():
+        cur_state = fringe.get()
+        find_successors(cur_state, fringe, explored)
+        explored[state_to_string(cur_state)] = cur_state
+        if is_goal_state(cur_state, goal_file): return explored
+
+
+
+
+def print_queue(q, q_name, output_file=False):
     if q.empty():
         print("\n", q_name, "is empty\n")
     else:
-        print("\n", q_name, "contents:\n")
-        while not q.empty():
-            print(q.get())
-        print("\n")
+        if output_file is not False:
+            with open(output_file, 'w') as of:
+                while not q.empty():
+                    of.write(q.get().to_string())
+                    of.write("\n\n")
+        else:
+            print("\n", q_name, "contents:\n")
+            while not q.empty():
+                print(q.get())
+            print("\n")
 
 
 
-def print_dict(explored):
-    print("\nExplored contents:\n")
-    for key in explored:
-        # print("\n", key)s
-        print(explored[key], "\n")
+def print_dict(explored, start_file, goal_file, output_file):
+    goal = set_state(goal_file)
+    start = set_state(start_file)
+    solution = queue.LifoQueue()
+    goal_state = explored[state_to_string(goal)]
+    start_state = explored[state_to_string(start)]
+    key = state_to_string(goal_state)
+    while key != state_to_string(start_state):
+        cur_state = explored[key]
+        par_state = explored[cur_state.get_value("right", "parent")]
+        solution.put(cur_state.drop("parent", 1))
+        key = state_to_string(par_state)
+    solution.put(start_state)
+    print_queue(solution, "Solution path", output_file)
+
 
 
 
 if __name__ == "__main__":
-    start_state = set_state("test_start1.txt")
-    explored = bfs(start_state, "test_goal1.txt")
-    print_dict(explored)
+    # if len(sys.argv) != 5:
+    #     print("\nUSAGE ERROR")
+    #     print("program_1.py <start_state_file> <goal_state_file> <search_mode> <output_file>\n")
+    # start = sys.argv[1]
+    # goal = sys.argv[2]
+    # mode = sys.argv[3]
+    # out_file = sys.argv[4]
+    # if mode == "bfs":
+    #     explored = bfs(start_state, goal)
+    # elif mode == "dfs":
+    #     explored = dfs(start_state, goal)
+    # elif mode == "iddfs":
+    #     explored = iddfs(start_state, goal)
+    # elif mode == "astar":
+    #     explored = astar(start_state, goal)
+    # else:
+    #     print("\nMODE ERROR: Unsupported mode {0}".format(mode))
+    #     sys.exit(0)
+
+
+    # start_state = set_state("test_start1.txt")
+    # goal_state = set_state("test_goal1.txt")
+    # fringe = queue.PriorityQueue()
+    # fringe.put((12, start_state))
+    # fringe.put((3, goal_state))
+    # # while not fringe.empty():
+    # #     item = fringe.get()
+    # #     print("\n", item[1])
+    # for item in fringe.queue:
+    #     print(item)
+    # # explored = bfs(start_state, "test_goal1.txt")
+    # # print_dict(explored, "test_start1.txt", "test_goal1.txt", "test.test")
