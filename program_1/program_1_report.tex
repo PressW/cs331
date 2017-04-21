@@ -11,6 +11,7 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{hyperref}
+\usepackage{amsfonts}
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
@@ -135,7 +136,24 @@ bank, the rate at which people are moved between banks is one per trip. \medskip
 
 
 \section{Results}
-
+\begin{center}
+ \begin{tabular}{|p{2cm} p{2cm} p{2cm} p{2cm}|} 
+ \hline
+ Algorithm & Test 1 & Test 2 & Test 3 \\ [0.5ex] 
+ \hline\hline
+ BFS & (12,28) & (34,184) & (378,8974) \\ 
+ \hline
+ DFS & (12,16) & (48,94) & (1798,4599) \\
+ \hline
+ IDDFS & (12,99) & (48,3590) & (???, $\infty$) \\
+ \hline
+ A* & (12,15) & (34,112) & (378,3851) \\ [1ex] 
+ \hline
+\end{tabular}
+\end{center}
+\begin{center}
+Key: (\textit{solution\_depth, num\_nodes\_expanded}) \\ \medskip
+\end{center}
 
 
 \section{Discussion}
@@ -169,5 +187,4 @@ novel view of their performance. \\
 
 
 \end{document}
-
 
