@@ -13,10 +13,8 @@ def set_state(filename):
 
 
 def find_successors(passed_state, fringe, explored):
-    if "parent" in passed_state:
-        state = passed_state.drop("parent", 1)
-    else:
-        state = passed_state
+    state = None
+    state = passed_state
     fringe_additions = 0
 
     # 1 missionary in the boat
@@ -28,7 +26,8 @@ def find_successors(passed_state, fringe, explored):
     else:
         m1_state = state.add(pd.DataFrame(m1))
     if (valid_state(m1_state)) and (state_to_string(m1_state) not in explored):
-        m1_state["parent"] = state_to_string(state)
+        m1_state.set_value("right", "meta", state_to_string(state))
+        m1_state.set_value("left", "meta", (state.get_value("left", "meta") + 1))
         fringe.put(m1_state)
         fringe_additions += 1
 
@@ -41,7 +40,8 @@ def find_successors(passed_state, fringe, explored):
     else:
         m2_state = state.add(pd.DataFrame(m2))
     if (valid_state(m2_state)) and (state_to_string(m2_state) not in explored):
-        m2_state["parent"] = state_to_string(state)
+        m2_state.set_value("right", "meta", state_to_string(state))
+        m2_state.set_value("left", "meta", (state.get_value("left", "meta") + 1))
         fringe.put(m2_state)
         fringe_additions += 1
 
@@ -54,7 +54,8 @@ def find_successors(passed_state, fringe, explored):
     else:
         c1_state = state.add(pd.DataFrame(c1))
     if (valid_state(c1_state)) and (state_to_string(c1_state) not in explored):
-        c1_state["parent"] = state_to_string(state)
+        c1_state.set_value("right", "meta", state_to_string(state))
+        c1_state.set_value("left", "meta", (state.get_value("left", "meta") + 1))
         fringe.put(c1_state)
         fringe_additions += 1
 
@@ -67,7 +68,8 @@ def find_successors(passed_state, fringe, explored):
     else:
         m1c1_state = state.add(pd.DataFrame(m1c1))
     if (valid_state(m1c1_state)) and (state_to_string(m1c1_state) not in explored):
-        m1c1_state["parent"] = state_to_string(state)
+        m1c1_state.set_value("right", "meta", state_to_string(state))
+        m1c1_state.set_value("left", "meta", (state.get_value("left", "meta") + 1))
         fringe.put(m1c1_state)
         fringe_additions += 1
 
@@ -80,7 +82,8 @@ def find_successors(passed_state, fringe, explored):
     else:
         c2_state = state.add(pd.DataFrame(c2))
     if (valid_state(c2_state)) and (state_to_string(c2_state) not in explored):
-        c2_state["parent"] = state_to_string(state)
+        c2_state.set_value("right", "meta", state_to_string(state))
+        c2_state.set_value("left", "meta", (state.get_value("left", "meta") + 1))
         fringe.put(c2_state)
         fringe_additions += 1
 
@@ -127,7 +130,10 @@ def hueristic(state, goal_file):
     # Positive number indicate a movement from right bank to left bank, negative from left to right
     m = state.get_value("right", "missionaries") - goal_state.get_value("right", "missionaries")
     c = state.get_value("right", "cannibals")    - goal_state.get_value("right", "cannibals")
-    return m + c + random.uniform(0.00000, 0.98765)
+    # Playing with Stochasticity
+    result = ((m + c) / 2) - random.uniform(0.00000, 0.001234)
+    if result < 0: result = 0
+    return result
 
 
 
@@ -135,14 +141,15 @@ def bfs(start, goal_file):
     # print("\nSTART STATE\n", start, "\n")
     fringe = queue.Queue()
     fringe.put(start)
-    fringe_size = 0
+    fringe_size = 1
     explored = {}
     explored[state_to_string(start)] = start
+    start.set_value("left", "meta", int(1))
     while not fringe.empty():
         cur_state = fringe.get()
-        fringe_size += find_successors(cur_state, fringe, explored)
         explored[state_to_string(cur_state)] = cur_state
         if is_goal_state(cur_state, goal_file): return explored, fringe_size
+        fringe_size += find_successors(cur_state, fringe, explored)
 
 
 
@@ -150,14 +157,15 @@ def dfs(start, goal_file):
     # print("\nSTART STATE\n", start, "\n")
     fringe = queue.LifoQueue()
     fringe.put(start)
-    fringe_size = 0
+    fringe_size = 1
     explored = {}
     explored[state_to_string(start)] = start
+    start.set_value("left", "meta", int(1))
     while not fringe.empty():
         cur_state = fringe.get()
-        fringe_size += find_successors(cur_state, fringe, explored)
         explored[state_to_string(cur_state)] = cur_state
         if is_goal_state(cur_state, goal_file): return explored, fringe_size
+        fringe_size += find_successors(cur_state, fringe, explored)
 
 
 
@@ -170,12 +178,15 @@ def iddfs(start, goal_file):
         fringe_size = 0
         explored = {}
         explored[state_to_string(start)] = start
-        if fringe.empty(): break
-        cur_state = fringe.get()
-        if is_goal_state(cur_state, goal_file): return explored, fringe_size
-        if depth == max_depth: continue
-        fringe_size += find_successors(cur_state, fringe, explored)
-        explored[state_to_string(cur_state)] = cur_state
+        start.set_value("left", "meta", int(1))
+        while True:
+            if fringe.empty(): break
+            cur_state = fringe.get()
+            depth = int(cur_state.get_value("left", "meta"))
+            explored[state_to_string(cur_state)] = cur_state
+            if is_goal_state(cur_state, goal_file): return explored, fringe_size
+            if depth == max_depth: continue
+            fringe_size += find_successors(cur_state, fringe, explored)
         max_depth += 1
 
 
@@ -186,6 +197,7 @@ def astar(start, goal_file):
     fringe = queue.PriorityQueue()
     explored = {}
     explored[state_to_string(start)] = start
+    start.set_value("left", "meta", int(1))
     cost_so_far = {}
     fringe.put((0, start))
     fringe_size = 0
@@ -194,16 +206,15 @@ def astar(start, goal_file):
 
     while not fringe.empty():
         cur_state = fringe.get()[1]
-        fringe_size += find_successors(cur_state, successors, explored)
+        find_successors(cur_state, successors, explored)
         for successor in successors.queue:
             cur_cost = cost_so_far[state_to_string(cur_state)] + 1
             if state_to_string(successor) not in cost_so_far or cur_cost < cost_so_far[state_to_string(successor)]:
                 cost_so_far[state_to_string(successor)] = cur_cost
                 priority = cur_cost + hueristic(successor, goal_file)
-                # print("\nPRIORITY: ", priority, " TYPE: ", type(priority), "\n")
-                # print("\nSUCCESSOR: ", successor, "\n")
-                successor["parent"] = state_to_string(cur_state)
+                successor.set_value("right", "meta", state_to_string(cur_state))
                 fringe.put((priority, successor))
+                fringe_size += 1
                 explored[state_to_string(cur_state)] = cur_state
                 if is_goal_state(cur_state, goal_file): return explored, fringe_size
 
@@ -220,7 +231,6 @@ def print_solution(q, q_name, cost, depth, output_file=False):
                     of.write("\n\n")
                 of.write("\nSPACE COMPLEXITY: {0}\n".format(cost))
                 of.write("SOLUTION DEPTH: {0}\n".format(depth))
-        # print("\n", q_name, "contents:\n")
         for item in reversed(q.queue):
             print(item, "\n")
         print("\n")
@@ -236,13 +246,15 @@ def calculate_solution(explored, start_file, goal_file):
     goal_state = explored[state_to_string(goal)]
     start_state = explored[state_to_string(start)]
     key = state_to_string(goal_state)
-    sol_depth = 1
+    sol_depth = int(goal_state.get_value("left", "meta"))
     while key != state_to_string(start_state):
         cur_state = explored[key]
-        par_state = explored[cur_state.get_value("right", "parent")]
-        solution.put(cur_state.drop("parent", 1))
+        par_key = str(cur_state.get_value("right", "meta")).split('.')[0]
+        while len(par_key) < 6:
+            par_key = "0" + par_key
+        par_state = explored[par_key]
+        solution.put(cur_state.drop("meta", 1))
         key = state_to_string(par_state)
-        sol_depth += 1
     solution.put(start_state)
     return solution, sol_depth
 
