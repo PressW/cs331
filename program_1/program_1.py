@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import queue, sys
+import queue, sys, random
 
 
 
@@ -127,12 +127,12 @@ def hueristic(state, goal_file):
     # Positive number indicate a movement from right bank to left bank, negative from left to right
     m = state.get_value("right", "missionaries") - goal_state.get_value("right", "missionaries")
     c = state.get_value("right", "cannibals")    - goal_state.get_value("right", "cannibals")
-    return m + c
+    return m + c + random.uniform(0.00000, 0.98765)
 
 
 
 def bfs(start, goal_file):
-    print("\nSTART STATE\n", start, "\n")
+    # print("\nSTART STATE\n", start, "\n")
     fringe = queue.Queue()
     fringe.put(start)
     fringe_size = 0
@@ -140,7 +140,6 @@ def bfs(start, goal_file):
     explored[state_to_string(start)] = start
     while not fringe.empty():
         cur_state = fringe.get()
-        print(hueristic(cur_state, "test_goal1.txt"))
         fringe_size += find_successors(cur_state, fringe, explored)
         explored[state_to_string(cur_state)] = cur_state
         if is_goal_state(cur_state, goal_file): return explored, fringe_size
@@ -148,7 +147,7 @@ def bfs(start, goal_file):
 
 
 def dfs(start, goal_file):
-    print("\nSTART STATE\n", start, "\n")
+    # print("\nSTART STATE\n", start, "\n")
     fringe = queue.LifoQueue()
     fringe.put(start)
     fringe_size = 0
@@ -163,62 +162,70 @@ def dfs(start, goal_file):
 
 
 def iddfs(start, goal_file):
-    print("\nSTART STATE\n", start, "\n")
+    # print("\nSTART STATE\n", start, "\n")
     max_depth = 1
-    while True:
+    while max_depth < 100000:
         fringe = queue.LifoQueue()
         fringe.put(start)
         fringe_size = 0
         explored = {}
         explored[state_to_string(start)] = start
-        while not fringe.empty():
-            cur_state = fringe.get()
-            if depth == max_depth: break
-            fringe_size += find_successors(cur_state, fringe, explored)
-            explored[state_to_string(cur_state)] = cur_state
-            if is_goal_state(cur_state, goal_file): return explored, fringe_size
+        if fringe.empty(): break
+        cur_state = fringe.get()
+        if is_goal_state(cur_state, goal_file): return explored, fringe_size
+        if depth == max_depth: continue
+        fringe_size += find_successors(cur_state, fringe, explored)
+        explored[state_to_string(cur_state)] = cur_state
         max_depth += 1
 
 
 
 def astar(start, goal_file):
-    print("\nSTART STATE\n", start, "\n")
+    # print("\nSTART STATE\n", start, "\n")
     successors = queue.Queue()
     fringe = queue.PriorityQueue()
     explored = {}
+    explored[state_to_string(start)] = start
     cost_so_far = {}
     fringe.put((0, start))
     fringe_size = 0
     cost_so_far[state_to_string(start)] = 0
+    print(state_to_string(start), "\n")
 
     while not fringe.empty():
         cur_state = fringe.get()[1]
-        if is_goal_state(cur_state, goal_file): return explored, fringe_size
         fringe_size += find_successors(cur_state, successors, explored)
         for successor in successors.queue:
             cur_cost = cost_so_far[state_to_string(cur_state)] + 1
             if state_to_string(successor) not in cost_so_far or cur_cost < cost_so_far[state_to_string(successor)]:
                 cost_so_far[state_to_string(successor)] = cur_cost
                 priority = cur_cost + hueristic(successor, goal_file)
+                # print("\nPRIORITY: ", priority, " TYPE: ", type(priority), "\n")
+                # print("\nSUCCESSOR: ", successor, "\n")
                 successor["parent"] = state_to_string(cur_state)
                 fringe.put((priority, successor))
                 explored[state_to_string(cur_state)] = cur_state
+                if is_goal_state(cur_state, goal_file): return explored, fringe_size
 
 
 
-def print_queue(q, q_name, output_file=False):
+def print_solution(q, q_name, cost, depth, output_file=False):
     if q.empty():
         print("\n", q_name, "is empty\n")
     else:
         if output_file is not False:
             with open(output_file, 'w') as of:
-                for item in q.queue:
+                for item in reversed(q.queue):
                     of.write(item.to_string())
                     of.write("\n\n")
-        print("\n", q_name, "contents:\n")
-        for item in q.queue:
-            print(item)
+                of.write("\nSPACE COMPLEXITY: {0}\n".format(cost))
+                of.write("SOLUTION DEPTH: {0}\n".format(depth))
+        # print("\n", q_name, "contents:\n")
+        for item in reversed(q.queue):
+            print(item, "\n")
         print("\n")
+        print("SPACE COMPLEXITY: ", cost)
+        print("SOLUTION DEPTH: ", depth, "\n")
 
 
 
@@ -229,7 +236,7 @@ def calculate_solution(explored, start_file, goal_file):
     goal_state = explored[state_to_string(goal)]
     start_state = explored[state_to_string(start)]
     key = state_to_string(goal_state)
-    sol_depth = 0
+    sol_depth = 1
     while key != state_to_string(start_state):
         cur_state = explored[key]
         par_state = explored[cur_state.get_value("right", "parent")]
@@ -251,6 +258,7 @@ if __name__ == "__main__":
     goal = sys.argv[2]
     mode = sys.argv[3]
     out_file = sys.argv[4]
+    start_state = set_state(start)
     if mode == "bfs":
         explored, space_cost = bfs(start_state, goal)
     elif mode == "dfs":
@@ -263,4 +271,4 @@ if __name__ == "__main__":
         print("\nMODE ERROR: Unsupported mode {0}".format(mode))
         sys.exit(0)
     solution_path, sol_depth = calculate_solution(explored, start, goal)
-    print_queue(solution_path, "Solution path", out_file)
+    print_solution(solution_path, "Solution path", space_cost, sol_depth, out_file)
