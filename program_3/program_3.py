@@ -33,7 +33,7 @@ def read_reviews():
 
 # Gets frequency distribution for most / least common words
 def freq_dist(tokens, word_dist=None):
-    # iterate through each word in each tweet and create frequency distrubution
+    # iterate through each word in each review and create frequency distrubution
     all_words = [w for i in range(0, len(tokens)) for w in tokens[i]]
     all_words = nltk.FreqDist(all_words)
     
@@ -45,7 +45,7 @@ def freq_dist(tokens, word_dist=None):
 
 
 
-# Creates a feature dictionary of tweet with True/False values for each word in the lexicon
+# Creates a feature dictionary of reviews with True/False values for each word in the lexicon
 def get_features(review, word_features):
     review_words = set(review)
     features = {}
