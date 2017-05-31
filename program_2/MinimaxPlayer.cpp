@@ -3,6 +3,7 @@
  *
  *  Created on: Apr 17, 2015
  *      Author: wong
+ *	Additional source credit: Brandon Lee
  */
 #include <iostream>
 #include <assert.h>
