@@ -14,16 +14,17 @@ public class SentimentAnalysis {
         }
     }
 
+    static class Probabilities {
+        double probPositive = 0;
+        double probNegative = 0;
+        WordProbabilities[] words;
+    }
+
     static class WordProbabilities {
-        int positiveCount = 0;
-        int negativeCount = 0;
-        float probExistsInPositive = 0;
-        float probExistsInNegative = 0;
-        float probMissingInPositive = 0;
-        float probMissingInNegative = 0;
-        int totalCount() {
-            return positiveCount + negativeCount;
-        }
+        double probExistsInPositive = 0;
+        double probExistsInNegative = 0;
+        double probMissingInPositive = 0;
+        double probMissingInNegative = 0;
     }
 
     public static void main(String[] args) {
@@ -48,47 +49,40 @@ public class SentimentAnalysis {
         writeReviewMatrixToFile(trainingMatrix, vocabulary, "preprocessed_train.txt");
         writeReviewMatrixToFile(testingMatrix, vocabulary, "preprocessed_test.txt");
 
-        WordProbabilities[] probs = calculateProbabilities(trainingMatrix, vocabulary);
+        Probabilities probs = calculateProbabilities(trainingMatrix, vocabulary);
 
-        classify(testingMatrix, vocabulary, probs);
+        float trainingAccuracy = classify(trainingMatrix, vocabulary, probs);
+        float testingAccuracy = classify(testingMatrix, vocabulary, probs);
+
+        System.out.println("Prediction Accuracies:");
+        System.out.println("\tTraining set: " + trainingAccuracy);
+        System.out.println("\tTesting set: " + testingAccuracy);
     }
 
-    static void classify(boolean[][] reviewMatrix, String[] vocabulary, WordProbabilities[] probs) {
-        int totalReviews = reviewMatrix.length;
-        int positiveReviews = 0, negativeReviews = 0;
-        for (boolean[] reviewLine : reviewMatrix) {
-            if (reviewLine[vocabulary.length]) {
-                positiveReviews++;
-            } else {
-                negativeReviews++;
-            }
-        }
-        double probPositive = (double)positiveReviews / totalReviews;
-        double probNegative = (double)negativeReviews / totalReviews;
-
-        int correctPrecitions = 0, wrongPredictions = 0;
+    static float classify(boolean[][] reviewMatrix, String[] vocabulary, Probabilities probs) {
+        int correctPredictions = 0;
 
         for (boolean[] reviewLine : reviewMatrix) {
-            double predictPositive = Math.log10(probPositive);
-            double predictNegative = Math.log10(probNegative);
+            double predictPositive = Math.log10(probs.probPositive);
+            double predictNegative = Math.log10(probs.probNegative);
             for (int wordNum = 0; wordNum < vocabulary.length; wordNum++) {
                 if (reviewLine[wordNum]) {
-                    predictPositive += Math.log10(probs[wordNum].probExistsInPositive);
-                    predictNegative += Math.log10(probs[wordNum].probExistsInNegative);
+                    predictPositive += Math.log10(probs.words[wordNum].probExistsInPositive);
+                    predictNegative += Math.log10(probs.words[wordNum].probExistsInNegative);
                 } else {
-                    predictPositive += Math.log10(probs[wordNum].probMissingInPositive);
-                    predictNegative += Math.log10(probs[wordNum].probMissingInNegative);
+                    predictPositive += Math.log10(probs.words[wordNum].probMissingInPositive);
+                    predictNegative += Math.log10(probs.words[wordNum].probMissingInNegative);
                 }
             }
 
-            if (reviewLine[vocabulary.length] && predictPositive > predictNegative)
-                correctPrecitions++;
-            else wrongPredictions++;
+            if (reviewLine[vocabulary.length] ^ predictPositive < predictNegative)
+                correctPredictions++;
         }
-        System.out.println("Prediction accuracy: " + (float)correctPrecitions / reviewMatrix.length);
+
+        return ((float) correctPredictions) / reviewMatrix.length;
     }
 
-    static WordProbabilities[] calculateProbabilities(boolean[][] reviewMatrix, String[] vocabulary) {
+    static Probabilities calculateProbabilities(boolean[][] reviewMatrix, String[] vocabulary) {
         int totalReviews = reviewMatrix.length;
         int positiveReviews = 0, negativeReviews = 0;
         for (boolean[] reviewLine : reviewMatrix) {
@@ -98,28 +92,36 @@ public class SentimentAnalysis {
                 negativeReviews++;
             }
         }
-        double probPositive = (double)positiveReviews / totalReviews;
-        double probNegative = (double)negativeReviews / totalReviews;
 
-        WordProbabilities[] probs = new WordProbabilities[vocabulary.length];
+        WordProbabilities[] wordProbs = new WordProbabilities[vocabulary.length];
 
         for (int wordNum = 0; wordNum < vocabulary.length; wordNum++) {
-            WordProbabilities wordProbabilities = new WordProbabilities();
-            for (int reviewNum = 0; reviewNum < reviewMatrix.length; reviewNum++) {
-                if (reviewMatrix[reviewNum][wordNum]) {
-                    if (reviewMatrix[reviewNum][vocabulary.length])
-                        wordProbabilities.positiveCount++;
-                    else
-                        wordProbabilities.negativeCount++;
+            int countExistsInPositive = 0, countExistsInNegative = 0, countMissingInPositive = 0, countMissingInNegative = 0;
+
+            for (boolean[] reviewLine : reviewMatrix) {
+                boolean wordExists = reviewLine[wordNum];
+                boolean positiveReview = reviewLine[vocabulary.length];
+                if (wordExists) {
+                    if (positiveReview) countExistsInPositive++;
+                    else countExistsInNegative++;
+                } else {
+                    if (positiveReview) countMissingInPositive++;
+                    else countMissingInNegative++;
                 }
             }
-            wordProbabilities.probExistsInPositive = (float)wordProbabilities.positiveCount / positiveReviews;
-            wordProbabilities.probExistsInPositive = (float)wordProbabilities.negativeCount / negativeReviews;
-            wordProbabilities.probMissingInPositive = 1 - wordProbabilities.probExistsInPositive;
-            wordProbabilities.probMissingInNegative = 1 - wordProbabilities.probExistsInNegative;
+            WordProbabilities wordProb = new WordProbabilities();
+            wordProb.probExistsInPositive = ((double) countExistsInPositive) / positiveReviews;
+            wordProb.probExistsInNegative = ((double) countExistsInNegative) / negativeReviews;
+            wordProb.probMissingInPositive = ((double) countMissingInPositive) / positiveReviews;
+            wordProb.probMissingInNegative = ((double) countMissingInNegative) / negativeReviews;
 
-            probs[wordNum] = wordProbabilities;
+            wordProbs[wordNum] = wordProb;
         }
+
+        Probabilities probs = new Probabilities();
+        probs.probPositive = ((double) positiveReviews) / totalReviews;
+        probs.probNegative = 1 - probs.probPositive;
+        probs.words = wordProbs;
 
         return probs;
     }
