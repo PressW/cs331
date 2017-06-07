@@ -110,10 +110,10 @@ public class SentimentAnalysis {
                 }
             }
             WordProbabilities wordProb = new WordProbabilities();
-            wordProb.probExistsInPositive = ((double) countExistsInPositive) / positiveReviews;
-            wordProb.probExistsInNegative = ((double) countExistsInNegative) / negativeReviews;
-            wordProb.probMissingInPositive = ((double) countMissingInPositive) / positiveReviews;
-            wordProb.probMissingInNegative = ((double) countMissingInNegative) / negativeReviews;
+            wordProb.probExistsInPositive = ((double) countExistsInPositive + 1) / (positiveReviews + 2);
+            wordProb.probExistsInNegative = ((double) countExistsInNegative + 1) / (negativeReviews + 2);
+            wordProb.probMissingInPositive = ((double) countMissingInPositive + 1) / (positiveReviews + 2);
+            wordProb.probMissingInNegative = ((double) countMissingInNegative + 1) / (negativeReviews + 2);
 
             wordProbs[wordNum] = wordProb;
         }

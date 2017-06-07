@@ -1,4 +1,4 @@
 Training set    | Testing set     | Prediction accuracy
 ----------------|-----------------|---------------------
-trainingSet.txt | trainingSet.txt | 0.98797596
-trainingSet.txt | testSet.txt     | 0.7102616
+trainingSet.txt | trainingSet.txt | 0.9458918
+trainingSet.txt | testSet.txt     | 0.7525151
